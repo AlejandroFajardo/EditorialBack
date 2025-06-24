@@ -1,6 +1,7 @@
 package com.uptc.edu.backendTemplate;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -25,6 +26,9 @@ import org.springframework.security.web.authentication.session.RegisterSessionAu
 import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
 import org.springframework.security.web.session.HttpSessionEventPublisher;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.cors.CorsConfigurationSource;
 
 @Configuration
 @EnableWebSecurity
@@ -52,9 +56,44 @@ class SecurityConfig {
     }
 
     @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration config = new CorsConfiguration();
+        config.setAllowedOriginPatterns(List.of("http://localhost:4200")); // frontend
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+        config.setAllowedHeaders(List.of("*"));
+        config.setAllowCredentials(true);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", config);
+        return source;
+    }
+
+
+    @Bean
     public HttpSessionEventPublisher httpSessionEventPublisher() {
         return new HttpSessionEventPublisher();
     }
+
+    // ==========================
+    // MODIFICACIÓN PARA DESARROLLO LOCAL
+    // ==========================
+    // Comenta toda la configuración de OAuth2 y JWT para evitar el error "No qualifying bean of type 'JwtDecoder'".
+    // Deja TODO permitido en desarrollo, así puedes trabajar sin seguridad.
+    // Cuando vayas a producción, descomenta la config original.
+
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))  // activa CORS
+                .csrf(csrf -> csrf.disable())                                     // desactiva CSRF para llamadas REST
+                .authorizeHttpRequests(auth -> auth
+                        .anyRequest().permitAll()  // en desarrollo, permitir todo
+                );
+        return http.build();
+    }
+
+    /*
+    // ========================== ORIGINAL (SOLO PARA PRODUCCIÓN) ==========================
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.authorizeHttpRequests(auth -> auth
@@ -79,6 +118,10 @@ class SecurityConfig {
 
         return http.build();
     }
+    */
+
+    // El resto de los beans (jwtAuthenticationConverter, extractRealmRoles, etc.) pueden dejarse como están,
+    // ya que no se usan con la config permisiva pero tampoco afectan si no se llaman.
 
     private JwtAuthenticationConverter jwtAuthenticationConverter() {
         JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
