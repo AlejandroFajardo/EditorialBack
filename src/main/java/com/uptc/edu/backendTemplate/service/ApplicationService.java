@@ -32,10 +32,13 @@ public class ApplicationService {
         try {
             emailService.sendNewApplicationEmail(
                     saved.getCenterEmail(),
-                    saved.getId(),
                     saved.getAuthorName(),
+                    saved.getBookTitle(),          // ← asegúrate de que este getter exista
+                    saved.getCenterEmail(),             // ← asegúrate de que este getter exista
+                    saved.getIsbnCode(),               // ← asegúrate de que este getter exista
                     saved.getCertificationType()
             );
+
         } catch (MessagingException e) {
             // Log error si falla el envío, pero no interrumpe la transacción
             System.err.println("Error enviando correo nueva aplicación: " + e.getMessage());
@@ -83,9 +86,10 @@ public class ApplicationService {
         try {
             emailService.sendStatusUpdateEmail(
                     saved.getCenterEmail(),
-                    saved.getId(),
-                    newStatus.name(),
-                    adminComments
+                    newStatus.name(),                   // <--- debe ser el estado nuevo ("Aceptado" o "Rechazado")
+                    adminComments,               // <--- comentarios del administrador
+                    saved.getAuthorName(),
+                    saved.getBookTitle()
             );
         } catch (MessagingException e) {
             // Registrarlo sin interrumpir flujo
